@@ -3,13 +3,12 @@
 import logging
 import httpx
 from datetime import UTC, datetime, timedelta
-from typing import Dict, List, Optional, Tuple, Any
+from typing import Dict
 
 from app.config import settings
 from app.models.carbon import (
     CarbonIntensityPeriod,
-    CarbonForecast,
-    CarbonIndex,
+    CarbonForecast
 )
 from app.services.cache_service import cache_service
 from app.utils.exceptions import (
@@ -35,7 +34,13 @@ class CarbonIntensityService:
 
     async def get_cache(self, cache_key) -> str|None:
         """
+        Retrieve data from cache if available and caching is enabled.
         
+        Args:
+            cache_key: The key to look up in the cache
+            
+        Returns:
+            Cached data if available, None otherwise
         """
         if self.use_cache:
             return await cache_service.get(cache_key)

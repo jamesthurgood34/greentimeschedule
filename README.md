@@ -14,8 +14,8 @@ An API for scheduling batch jobs during periods of lowest CO2 intensity on the e
 
 ### Prerequisites
 
-- Python 3.8+
-- Virtual environment (recommended)
+- Python 3.9+
+- UV package manager (for dependency management and virtual environments)
 
 ### Setup
 
@@ -29,22 +29,25 @@ cd greentimeschedule
 2. Create and activate a virtual environment:
 
 ```bash
-python -m venv venv
+# Using UV
+uv venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 ```
 
 3. Install dependencies:
 
 ```bash
-pip install -r requirements.txt
+# Install using UV from pyproject.toml and uv.lock
+uv sync
 ```
+
 
 ## Usage
 
 ### Starting the API server
 
 ```bash
-uvicorn app.main:app --reload
+fastapi dev ./app/main.py
 ```
 
 The API will be available at http://localhost:8000.

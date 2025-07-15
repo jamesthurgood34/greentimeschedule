@@ -260,13 +260,17 @@ class ScheduleService:
     
     def _calculate_cached_data_age(self, carbon_data: Dict[str, List[Dict]]) -> int:
         """
-        Calculate the age of the cached carbon data in minutes.
+        Get the age of the cached carbon data in minutes.
+        
+        Note: Current implementation returns a fixed default value.
+        In a production environment, this would track when the data was
+        last fetched from the API.
         
         Args:
             carbon_data: Dictionary of carbon intensity data
             
         Returns:
-            Age of the data in minutes
+            Age of the data in minutes (currently fixed at 15 minutes)
         """
         # For now, we'll just return a default value
         # In a real implementation, we would track when the data was fetched
