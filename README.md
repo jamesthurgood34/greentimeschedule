@@ -100,7 +100,3 @@ The API can be configured using environment variables:
 - `DEBUG` - Enable debug mode (default: False)
 - `REDIS_URL` - Redis URL for caching (default: None, uses in-memory cache)
 - `CARBON_INTENSITY_TIMEOUT` - Timeout for Carbon Intensity API requests in seconds (default: 10)
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
