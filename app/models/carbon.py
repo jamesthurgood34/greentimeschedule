@@ -36,8 +36,9 @@ class CarbonIntensityAPIResponse(BaseModel):
     to: datetime
     intensity: dict = Field(...)
 
-    class Config:
-        populate_by_name = True
+    model_config = {
+        "populate_by_name": True
+    }
 
 
 class CarbonIntensityError(BaseModel):

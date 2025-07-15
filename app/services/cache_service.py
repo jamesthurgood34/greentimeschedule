@@ -42,6 +42,7 @@ class SimpleCache:
                 del self._cache[key]
                 return None
             
+            logger.debug(f"Cache hit for {key}")
             return value
     
     def set(self, key: str, value: Any, ttl_seconds: Optional[int] = None) -> bool:
@@ -79,7 +80,6 @@ class SimpleCache:
                 del self._cache[key]
                 return True
             return False
-    
     def clear_expired(self) -> int:
         """
         Clear all expired entries from the cache.
@@ -98,6 +98,19 @@ class SimpleCache:
                 del self._cache[key]
             
             return len(expired_keys)
+    
+    def clear_all(self) -> int:
+        """
+        Clear all entries from the cache regardless of expiration.
+        
+        Returns:
+            Number of entries cleared
+        """
+        with self._lock:
+            count = len(self._cache)
+            self._cache.clear()
+            return count
+
 
 
 class CacheService:
@@ -158,6 +171,21 @@ class CacheService:
             return self._cache.delete(key)
         except Exception as e:
             logger.error(f"Error deleting value from cache: {e}")
+            return False
+    
+    async def clear_all(self) -> bool:
+        """
+        Clear all values from the cache.
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cleared_count = self._cache.clear_all()
+            logger.info(f"Cleared {cleared_count} entries from cache")
+            return True
+        except Exception as e:
+            logger.error(f"Error clearing cache: {e}")
             return False
     
     @staticmethod

@@ -2,7 +2,7 @@
 
 import logging
 import httpx
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 
 from app.config import settings
@@ -27,10 +27,20 @@ logger = logging.getLogger(__name__)
 class CarbonIntensityService:
     """Service for fetching and processing carbon intensity data."""
     
-    def __init__(self):
+    def __init__(self, use_cache = True):
         """Initialize the carbon intensity service."""
         self.base_url = settings.CARBON_INTENSITY_API_URL
         self.timeout = settings.CARBON_INTENSITY_TIMEOUT
+        self.use_cache = use_cache
+
+    async def get_cache(self, cache_key) -> str|None:
+        """
+        
+        """
+        if self.use_cache:
+            return await cache_service.get(cache_key)
+        else:
+            return None
     
     async def get_intensity_for_period(
         self, 
@@ -51,9 +61,8 @@ class CarbonIntensityService:
             CarbonAPIUnavailableError: If the Carbon API is unavailable
             CarbonAPIResponseError: If the response is invalid
         """
-        # Check cache first
         cache_key = cache_service.get_carbon_forecast_key(date_str, [period])
-        cached_data = await cache_service.get(cache_key)
+        cached_data = await self.get_cache(cache_key)
         
         if cached_data:
             logger.debug(f"Cache hit for {cache_key}")
@@ -132,7 +141,7 @@ class CarbonIntensityService:
             error_msg = f"Carbon API request failed: {str(e)}"
             logger.error(error_msg)
             raise CarbonAPIUnavailableError(error_msg)
-    
+
     async def get_intensity_for_date(self, date_str: str) -> CarbonForecast:
         """
         Get carbon intensity forecast for an entire day.
@@ -149,8 +158,9 @@ class CarbonIntensityService:
         """
         # Check cache first
         cache_key = cache_service.get_carbon_forecast_key(date_str)
-        cached_data = await cache_service.get(cache_key)
-        
+        cached_data = await self.get_cache(cache_key)
+
+                
         if cached_data:
             logger.debug(f"Cache hit for {cache_key}")
             return CarbonForecast(
@@ -217,7 +227,7 @@ class CarbonIntensityService:
                 periods.sort(key=lambda p: p.period)
                 
                 # Create the forecast object
-                now = datetime.utcnow()
+                now = datetime.now(UTC)
                 forecast = CarbonForecast(
                     date=date_str,
                     forecast_periods=periods,

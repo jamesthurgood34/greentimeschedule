@@ -1,7 +1,7 @@
 """Service for scheduling batch jobs during periods of low carbon intensity."""
 
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone, UTC
 from typing import List, Tuple, Dict, Optional
 
 from app.config import settings
@@ -46,7 +46,7 @@ class ScheduleService:
         self._validate_request(request)
         
         # Calculate the earliest start time (now) and latest end time (deadline)
-        now = datetime.utcnow()
+        now = datetime.now(UTC)
         deadline = request.deadline_utc
         job_duration = timedelta(minutes=request.job_duration_minutes)
         
@@ -130,7 +130,7 @@ class ScheduleService:
             )
         
         # Check deadline
-        if request.deadline_utc <= datetime.utcnow():
+        if request.deadline_utc <= datetime.now(UTC):
             raise InvalidScheduleRequestError("Deadline must be in the future")
     
     async def _get_carbon_data_for_windows(
@@ -249,7 +249,7 @@ class ScheduleService:
         Returns:
             Confidence level string (high, medium, low)
         """
-        hours_in_future = (start_time - datetime.utcnow()).total_seconds() / 3600
+        hours_in_future = (start_time - datetime.now(UTC)).total_seconds() / 3600
         
         if hours_in_future <= 12:
             return "high"

@@ -6,15 +6,23 @@ import httpx
 from datetime import datetime
 from unittest.mock import patch, AsyncMock, MagicMock
 
+from app.services.cache_service import cache_service
+
 from app.services.carbon_service import CarbonIntensityService
 from app.utils.exceptions import CarbonAPIUnavailableError, CarbonAPIResponseError
 
 
-@pytest.fixture
-def carbon_service():
+@pytest.fixture()
+def carbon_service_with_cache():
     """Fixture for the carbon intensity service."""
-    return CarbonIntensityService()
+    # ensure cache is cleared before each test
+    return CarbonIntensityService(use_cache = True)
 
+@pytest.fixture()
+def carbon_service_no_cache():
+    """Fixture for the carbon intensity service."""
+    # ensure cache is cleared before each test
+    return CarbonIntensityService(use_cache = False)
 
 @pytest.fixture
 def mock_carbon_api_response():
@@ -46,7 +54,7 @@ def mock_carbon_api_error_response():
 
 
 @pytest.mark.asyncio
-async def test_get_intensity_for_period_success(carbon_service, mock_carbon_api_response):
+async def test_get_intensity_for_period_success(carbon_service_with_cache, mock_carbon_api_response):
     """Test successful retrieval of carbon intensity for a specific period."""
     # Setup
     date_str = "2024-06-20"
@@ -59,7 +67,7 @@ async def test_get_intensity_for_period_success(carbon_service, mock_carbon_api_
     
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         # Execute
-        result = await carbon_service.get_intensity_for_period(date_str, period)
+        result = await carbon_service_with_cache.get_intensity_for_period(date_str, period)
         
         # Verify
         assert result is not None
@@ -70,7 +78,7 @@ async def test_get_intensity_for_period_success(carbon_service, mock_carbon_api_
 
 
 @pytest.mark.asyncio
-async def test_get_intensity_for_period_api_error(carbon_service, mock_carbon_api_error_response):
+async def test_get_intensity_for_period_api_error(carbon_service_with_cache, mock_carbon_api_error_response):
     """Test handling of API errors when getting intensity for a period."""
     # Setup
     date_str = "invalid-date"
@@ -84,11 +92,11 @@ async def test_get_intensity_for_period_api_error(carbon_service, mock_carbon_ap
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         # Execute and verify
         with pytest.raises(CarbonAPIResponseError):
-            await carbon_service.get_intensity_for_period(date_str, period)
+            await carbon_service_with_cache.get_intensity_for_period(date_str, period)
 
 
 @pytest.mark.asyncio
-async def test_get_intensity_for_period_api_unavailable(carbon_service):
+async def test_get_intensity_for_period_api_unavailable(carbon_service_no_cache):
     """Test handling of API unavailability when getting intensity for a period."""
     # Setup
     date_str = "2024-06-20"
@@ -98,11 +106,11 @@ async def test_get_intensity_for_period_api_unavailable(carbon_service):
     with patch("httpx.AsyncClient.get", new=AsyncMock(side_effect=httpx.RequestError("Connection error"))):
         # Execute and verify
         with pytest.raises(CarbonAPIUnavailableError):
-            await carbon_service.get_intensity_for_period(date_str, period)
+            await carbon_service_no_cache.get_intensity_for_period(date_str, period)
 
 
 @pytest.mark.asyncio
-async def test_get_intensity_for_date_success(carbon_service):
+async def test_get_intensity_for_date_success(carbon_service_with_cache):
     """Test successful retrieval of carbon intensity for a full day."""
     # Setup
     date_str = "2024-06-20"
@@ -139,7 +147,7 @@ async def test_get_intensity_for_date_success(carbon_service):
     
     with patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response_obj)):
         # Execute
-        result = await carbon_service.get_intensity_for_date(date_str)
+        result = await carbon_service_with_cache.get_intensity_for_date(date_str)
         
         # Verify
         assert result is not None
@@ -150,7 +158,7 @@ async def test_get_intensity_for_date_success(carbon_service):
 
 
 @pytest.mark.asyncio
-async def test_get_intensity_for_date_range(carbon_service):
+async def test_get_intensity_for_date_range(carbon_service_with_cache):
     """Test retrieval of carbon intensity for a date range."""
     # Setup
     start_date = "2024-06-20"
@@ -158,12 +166,12 @@ async def test_get_intensity_for_date_range(carbon_service):
     
     # Mock the get_intensity_for_date method
     with patch.object(
-        carbon_service,
+        carbon_service_with_cache,
         "get_intensity_for_date",
         new=AsyncMock(return_value=MagicMock())
     ) as mock_get_for_date:
         # Execute
-        result = await carbon_service.get_intensity_for_date_range(start_date, end_date)
+        result = await carbon_service_with_cache.get_intensity_for_date_range(start_date, end_date)
         
         # Verify
         assert result is not None
@@ -175,7 +183,7 @@ async def test_get_intensity_for_date_range(carbon_service):
 
 
 @pytest.mark.asyncio
-async def test_caching(carbon_service, mock_carbon_api_response):
+async def test_caching(carbon_service_with_cache, mock_carbon_api_response):
     """Test that caching works correctly."""
     # Setup
     date_str = "2024-06-20"
@@ -195,7 +203,7 @@ async def test_caching(carbon_service, mock_carbon_api_response):
          patch("httpx.AsyncClient.get", new=AsyncMock(return_value=mock_response)):
         
         # First call - should hit the API
-        await carbon_service.get_intensity_for_period(date_str, period)
+        await carbon_service_with_cache.get_intensity_for_period(date_str, period)
         
         # Verify cache was checked and then set
         mock_cache.get.assert_called_once()
@@ -214,7 +222,7 @@ async def test_caching(carbon_service, mock_carbon_api_response):
         mock_cache.get = AsyncMock(return_value=cached_data)
         
         # Second call - should use cache
-        result = await carbon_service.get_intensity_for_period(date_str, period)
+        result = await carbon_service_with_cache.get_intensity_for_period(date_str, period)
         
         # Verify cache was checked but not set (since we had a hit)
         mock_cache.get.assert_called_once()
