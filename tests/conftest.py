@@ -3,7 +3,6 @@ Pytest configuration file.
 This file helps pytest with test discovery and configuration.
 """
 
-import pytest
 import sys
 from pathlib import Path
 

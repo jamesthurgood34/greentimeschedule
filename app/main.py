@@ -6,7 +6,6 @@ from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 # Load environment variables
-from app.utils.load_env import project_root
 from app.config import settings
 from app.routes import schedule, carbon, health
 from app.utils.exceptions import GreenScheduleException
@@ -41,9 +40,12 @@ app.include_router(schedule.router, prefix=settings.API_V1_PREFIX)
 app.include_router(carbon.router, prefix=settings.API_V1_PREFIX)
 app.include_router(health.router)
 
+
 # Exception handlers
 @app.exception_handler(GreenScheduleException)
-async def green_schedule_exception_handler(request: Request, exc: GreenScheduleException):
+async def green_schedule_exception_handler(
+    request: Request, exc: GreenScheduleException
+):
     """Handle Green Schedule-specific exceptions."""
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
@@ -65,4 +67,5 @@ if __name__ == "__main__":
     # This is for development only. In production, use:
     # uvicorn app.main:app --host 0.0.0.0 --port 8000
     import uvicorn
+
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

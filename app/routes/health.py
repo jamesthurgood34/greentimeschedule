@@ -11,12 +11,12 @@ router = APIRouter(tags=["health"])
 async def health_check():
     """
     Health check endpoint.
-    
+
     This endpoint returns the current status of the API and can be used
     for monitoring and health checks.
     """
     return {
         "status": "ok",
         "timestamp": datetime.utcnow().isoformat(),
-        "version": "0.1.0"
+        "version": "0.1.0",
     }
